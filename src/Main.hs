@@ -13,13 +13,16 @@ import           Miso.String
 
 import Apecs
 import Linear (V2 (..))
-import JSDOM.Types (unElement,fromJSValUnchecked, pFromJSVal, pToJSVal, JSString, liftJSM, askJSM, runJSM, JSContextRef )
+import JSDOM.Types (HTMLAudioElement, unElement,fromJSValUnchecked, pFromJSVal, pToJSVal, JSString, liftJSM, askJSM, runJSM, JSContextRef )
+import JSDOM.Generated.HTMLMediaElement (play)
 
 -- | JSAddle import
 #ifndef __GHCJS__
 import           Language.Javascript.JSaddle.Warp as JSaddle
 import qualified Network.Wai.Handler.Warp         as Warp
+import qualified Network.Wai as Wai
 import           Network.WebSockets
+import qualified Network.Wai.Application.Static as Static
 #endif
 import           Control.Monad.IO.Class
 
@@ -47,8 +50,12 @@ data Action
   deriving (Show, Eq)
 
 #ifndef __GHCJS__
+hello :: Wai.Application
+hello = Static.staticApp settings
+  where
+    settings = Static.defaultWebAppSettings "."
 runApp :: JSM () -> IO ()
-runApp f = JSaddle.debugOr 8080 (f >> syncPoint) JSaddle.jsaddleApp
+runApp f = JSaddle.debugOr 8080 (f >> syncPoint) (JSaddle.jsaddleAppWithJsOr (JSaddle.jsaddleJs False) hello)
 #else
 runApp :: IO () -> IO ()
 runApp app = app
@@ -69,7 +76,7 @@ main = do
     model  = 0
     view   = viewModel            -- view function
     events = defaultEvents        -- default delegated events
-    subs   = []                   -- empty subscription list
+    subs   = [arrowsSub (\_ -> SubtractOne)]                   -- empty subscription list
     mountPoint = Nothing          -- mount point for application (Nothing defaults to 'body')
     logLevel = Off                -- used during prerendering to see if the VDOM and DOM are in synch (only used with `miso` function)
 
@@ -84,7 +91,11 @@ updateModel (c, w) SubtractOne m = do
     pure NoOp
   noEff (m - 1)
 updateModel (_, w) NoOp m = noEff m
-updateModel (_, w) SayHelloWorld m = m <# do
+updateModel (c, w) SayHelloWorld m = m <# do
+  liftIO $ flip runJSM c $ do
+    jsval <- getElementById "bgm"
+    audioElement <- fromJSValUnchecked jsval :: JSM HTMLAudioElement
+    play audioElement
   liftIO (runSystem game w)
   liftIO (putStrLn "Hello World") >> pure NoOp
 
@@ -99,4 +110,5 @@ viewModel x = div_ [] [
             , height_ "300"
             ] []
  , audio_ [ src_ "assets/se/button.mp3", id_ "buttonSe" ] []
+ , audio_ [ src_ "assets/bgm/mozegaku5_10_midorisekai.mp3", id_ "bgm" ] []
  ]
