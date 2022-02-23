@@ -45,10 +45,13 @@ newApp = do
   (args <# "width") canvasWidth
   (args <# "height") canvasHeight
   (args <# "backgroundColor") "#0x1099bb"
-  app <- new (pixi ! "Application") (val args)
+  new (pixi ! "Application") (val args)
+
+initializeApp :: Application -> JSM ()
+initializeApp app = do
   div <- getElementById . ms $ "pixiCanvas"
-  div # "appendChild" $ (app ^. js "view")
-  return app
+  div # "appendChild" $ [app ^. js "view"]
+  return ()
 
 pixi = jsg "PIXI"
 
@@ -68,4 +71,21 @@ setSpriteSize sprite w h = do
 
 addStage app = app ! "stage" # "addChild"
 
+findChild :: String -> Application -> JSM (Maybe JSVal)
+findChild name app = do
+  return Nothing
+
 pixiCanvas = div_ [id_ . ms $ "pixiCanvas"] []
+
+createBar = do
+  eval "new PIXI.Graphics().beginFill(0x333333).drawRect(0,0,50,10).endFill();"
+
+drawPlayerBar :: Float -> Float -> Float -> JSVal -> JSM ()
+drawPlayerBar x y length bar = do
+  (bar <# "x") (x - length/ 2)
+  (bar <# "y") y
+  bar # "clear" $ ()
+  bar # "beginFill" $ [0xAA1111 :: Float]
+  bar # "drawRect" $ [0, 0, length, 10]
+  bar # "endFill" $ ()
+  return ()

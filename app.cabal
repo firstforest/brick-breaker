@@ -13,8 +13,10 @@ executable app
 
   -- cabal-fmt: expand src -Main
   other-modules:
+    Audio
     Const
     DevServer
+    Game
     Pixi
     ThreeVRM
     Types

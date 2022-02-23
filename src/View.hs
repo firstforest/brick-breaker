@@ -1,46 +1,52 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module View where
 
 import Apecs
+import qualified Const
 import Control.Lens ((^.))
+import Game
 import JSDOM
-import JSDOM.Generated.AudioContext
-import qualified JSDOM.Generated.CanvasRenderingContext2D as JCanvas
-import JSDOM.Generated.Document
-import JSDOM.Generated.HTMLCanvasElement
-import JSDOM.Generated.HTMLCollection
-import JSDOM.Generated.HTMLMediaElement (play)
-import JSDOM.Types (HTMLAudioElement, JSContextRef, JSString, askJSM, fromJSValUnchecked, liftJSM, pFromJSVal, pToJSVal, runJSM, unElement)
 import Language.Javascript.JSaddle
 import Miso
 import Miso.String
-import ThreeVRM
+import Pixi (addStage, createSprite, loadTexture, newApp, setSpriteSize, findChild, createBar, drawPlayerBar)
 import Types
-import Pixi (newApp, loadTexture, createSprite, addStage, setSpriteSize)
-import qualified Const
+import Linear (V2(V2))
 
-drawBackground :: JSContextRef -> System World ()
-drawBackground c = do
-  liftIO $ flip runJSM c $ do
-    app <- newApp
+drawBackground :: Context -> System' ()
+drawBackground Context{..} = do
+  liftToSystem jsContext  $ do
     tex <- loadTexture "assets/img/background.png"
     sprite <- createSprite tex
     setSpriteSize sprite Const.width Const.height
-    addStage app sprite
+    addStage pixiApp sprite
     return ()
 
-drawEntity :: JSContextRef -> System World ()
+liftToSystem c = liftIO . flip runJSM c
+
+drawEntity :: JSContextRef -> System' ()
 drawEntity c = do
-  liftIO $
-    flip runJSM c $ do
-      audioContext <- newAudioContext
-      jsval <- getElementById "buttonSe"
-      audioElement <- fromJSValUnchecked jsval :: JSM HTMLAudioElement
-      play audioElement
-  liftIO $ flip runJSM c $ do
+  liftToSystem c $ do
     app <- newApp
     tex <- loadTexture "assets/img/background.png"
     sprite <- createSprite tex
     addStage app sprite
     return ()
+
+drawBar :: Context -> System' ()
+drawBar Context{..} = do
+  cmapM_ $ \(Bar {length}, Position (V2 x y)) -> do
+    liftToSystem jsContext $ do
+      maybeChild <- findChild "bar" pixiApp
+      bar <- case maybeChild of
+        Just bar -> return bar
+        Nothing -> do
+          bar <- createBar 
+          addStage pixiApp bar
+          return bar
+      drawPlayerBar x y length bar 
+      return ()
+
