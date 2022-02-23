@@ -11,7 +11,7 @@
 module Types where
 
 import Apecs
-import JSDOM.Types (JSContextRef)
+import JSDOM.Types (JSContextRef, Comment)
 import Linear (V2 (..))
 import Pixi (Application)
 
@@ -32,7 +32,15 @@ data Bar = Bar
 
 instance Component Bar where type Storage Bar = Unique Bar
 
-makeWorld "World" [''Position, ''Velocity, ''Bar]
+-- Ball
+
+data Ball = Ball {
+    radius :: Float
+} deriving Show
+
+instance Component Ball where type Storage Ball = Unique Ball
+
+makeWorld "World" [''Position, ''Velocity, ''Bar, ''Ball]
 
 type System' a = System World a
 

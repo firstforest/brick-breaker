@@ -46,6 +46,7 @@ newApp = do
   (args <# "width") canvasWidth
   (args <# "height") canvasHeight
   (args <# "backgroundColor") "#0x1099bb"
+  (args <# "antialias") True
   new (pixi ! "Application") (val args)
 
 initializeApp :: Application -> JSM ()
@@ -84,11 +85,6 @@ findChild name app = do
 
 pixiCanvas = div_ [id_ . ms $ "pixiCanvas"] []
 
-createBar = do
-  bar <- eval "new PIXI.Graphics().beginFill(0x333333).drawRect(0,0,50,10).endFill();"
-  (bar <# "name") "bar"
-  return bar
-
 drawPlayerBar :: Float -> Float -> Float -> JSVal -> JSM ()
 drawPlayerBar x y length bar = do
   (bar <# "x") (x - length / 2)
@@ -97,4 +93,24 @@ drawPlayerBar x y length bar = do
   bar # "beginFill" $ [0xAA1111 :: Float]
   bar # "drawRect" $ [0, 0, length, 10]
   bar # "endFill" $ ()
+  return ()
+
+type PixiBall = JSVal
+
+createNamedGraphics :: String -> JSM JSVal
+createNamedGraphics name = do
+  g <- createGraphics
+  (g <# "name") name
+  return g
+
+createGraphics = eval "new PIXI.Graphics();"
+
+drawBall :: Float -> Float -> Float -> PixiBall -> JSM ()
+drawBall x y radius ball = do
+  (ball <# "x") x
+  (ball <# "y") y
+  ball # "clear" $ ()
+  ball # "beginFill" $ [0xEE1111 :: Float]
+  ball # "drawCircle" $ [0, 0, radius]
+  ball # "endFill" $ ()
   return ()

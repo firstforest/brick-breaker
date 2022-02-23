@@ -15,6 +15,7 @@ import Linear
 initialize :: System' ()
 initialize = do
   newEntity (Position $ V2 (Const.width/2) (Const.height - 20), Bar 100)
+  newEntity (Position $ V2 (Const.width/2) (Const.height - 30), Ball 10)
   return ()
 
 game :: System' ()

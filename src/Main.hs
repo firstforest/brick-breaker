@@ -15,6 +15,7 @@ import qualified Network.Wai.Application.Static as Static
 import qualified DevServer
 #endif
 
+import qualified Const
 import Control.Monad (replicateM)
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy as B
@@ -25,11 +26,10 @@ import Language.Javascript.JSaddle (val)
 import Linear (V2 (..))
 import Miso
 import Miso.String
-import Pixi (newApp, pixiCanvas, initializeApp)
+import Pixi (initializeApp, newApp, pixiCanvas)
 import ThreeVRM (threeCanvas)
 import Types
 import View
-import qualified Const
 
 -- | Type synonym for an application model
 type Model = Int
@@ -98,12 +98,12 @@ updateModel c@Context {..} Initialize m =
 updateModel Context {..} NoOp m = noEff m
 updateModel c@Context {..} Tick m =
   m <# do
-    liftIO $ runSystem (drawBar c) world
+    liftIO $ runSystem (drawEntities c) world
     return Tick
-updateModel Context{..} (Move x) m = m <# do
-  liftIO $ runSystem (moveBar x) world
-  return NoOp
-  
+updateModel Context {..} (Move x) m =
+  m <# do
+    liftIO $ runSystem (moveBar x) world
+    return NoOp
 
 offset = (650 - Const.width) / 2
 
