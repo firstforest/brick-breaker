@@ -1,5 +1,6 @@
 module Pixi where
 
+import qualified Const
 import Control.Lens ((^.))
 import Language.Javascript.JSaddle
   ( FromJSVal (fromJSValUnchecked),
@@ -23,16 +24,18 @@ import Language.Javascript.JSaddle
     val,
     valToJSON,
     valToText,
-    (<#), (!), (#)
+    (!),
+    (#),
+    (<#),
   )
 import Miso (div_, getElementById, id_)
 import Miso.String (ms)
 
 canvasWidth :: Float
-canvasWidth = 640
+canvasWidth = Const.width
 
 canvasHeight :: Float
-canvasHeight = 480
+canvasHeight = Const.height
 
 type Application = JSVal
 
@@ -52,15 +55,16 @@ pixi = jsg "PIXI"
 loadTexture :: String -> JSM JSVal
 loadTexture url = new (pixi ! "Texture" ! "from") (val url)
 
-createSprite :: JSVal -> JSM JSVal
+type Sprite = JSVal
+
+createSprite :: JSVal -> JSM Sprite
 createSprite tex = do
-  sprite <- new (pixi ! "Sprite") tex
-  sprite ! "anchor" # "set" $ [0.5::Float]
-  sprite ! "scale" <# "x" $ (0.1 :: Float)
-  sprite ! "scale" <# "y" $ (0.1 :: Float)
-  sprite <# "x" $ (320::Float)
-  sprite <# "y" $ (240::Float)
-  return sprite
+  new (pixi ! "Sprite") tex
+
+setSpriteSize :: Sprite -> Float -> Float -> JSM ()
+setSpriteSize sprite w h = do
+  sprite <# "width" $ w
+  sprite <# "height" $ h
 
 addStage app = app ! "stage" # "addChild"
 

@@ -13,6 +13,7 @@ executable app
 
   -- cabal-fmt: expand src -Main
   other-modules:
+    Const
     DevServer
     Pixi
     ThreeVRM

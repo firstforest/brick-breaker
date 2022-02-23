@@ -17,22 +17,21 @@ import Miso
 import Miso.String
 import ThreeVRM
 import Types
-import Pixi (newApp, loadTexture, createSprite, addStage)
+import Pixi (newApp, loadTexture, createSprite, addStage, setSpriteSize)
+import qualified Const
+
+drawBackground :: JSContextRef -> System World ()
+drawBackground c = do
+  liftIO $ flip runJSM c $ do
+    app <- newApp
+    tex <- loadTexture "assets/img/background.png"
+    sprite <- createSprite tex
+    setSpriteSize sprite Const.width Const.height
+    addStage app sprite
+    return ()
 
 drawEntity :: JSContextRef -> System World ()
 drawEntity c = do
-  liftIO $
-    flip runJSM c $ do
-      c <- getThreeCanvas
-      scene <- newScene
-      camera <- newCamera
-      renderer <- newRenderer c
-      loader <- newLoader
-      grid <- newGridHelper
-      addToScene scene grid
-      loadVRM loader scene renderer camera
-      render renderer scene camera
-      return ()
   liftIO $
     flip runJSM c $ do
       audioContext <- newAudioContext
@@ -41,28 +40,7 @@ drawEntity c = do
       play audioElement
   liftIO $ flip runJSM c $ do
     app <- newApp
-    tex <- loadTexture "assets/img/20220131a.png"
+    tex <- loadTexture "assets/img/background.png"
     sprite <- createSprite tex
     addStage app sprite
     return ()
-  cmapM_ $ \(Position p, Entity e) -> liftIO $ do
-    flip runJSM c $ do
-      consoleLog $ ms . show $ (e, p)
-
-      canvasContext <- getCanvasContext
-      let c = convertElem canvasContext
-      JCanvas.clearRect c 0 0 300 300
-      JCanvas.setFillStyle c ("blue" :: String)
-      f <- JCanvas.getFont c
-      consoleLog . ms $ (f :: String)
-      JCanvas.fillText c (ms ("test" :: String)) 20 20 (Just 30)
-
-getCanvas = do
-  jsval <- getElementById "canvas"
-  fromJSValUnchecked jsval
-
-getCanvasContext = do
-  canvas <- getCanvas
-  getContextUnsafe canvas ("2d" :: String) ([] :: [JSString])
-
-convertElem = pFromJSVal . pToJSVal

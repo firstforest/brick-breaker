@@ -24,10 +24,10 @@ import Language.Javascript.JSaddle (val)
 import Linear (V2 (..))
 import Miso
 import Miso.String
+import Pixi (pixiCanvas)
 import ThreeVRM (threeCanvas)
 import Types
 import View
-import Pixi (pixiCanvas)
 
 game :: System World ()
 game = do
@@ -47,6 +47,7 @@ data Action
   | SubtractOne
   | NoOp
   | SayHelloWorld
+  | Initialize
   deriving (Show, Eq)
 
 libraries =
@@ -80,7 +81,7 @@ main = do
           ..
         }
   where
-    initialAction = SayHelloWorld -- initial action to be executed on application load
+    initialAction = Initialize
     model = 0
     view = viewModel -- view function
     events = defaultEvents -- default delegated events
@@ -90,12 +91,12 @@ main = do
 
 -- | Updates model, optionally introduces side effects
 updateModel :: (JSContextRef, World) -> Action -> Model -> Effect Action Model
-updateModel (_, w) AddOne m = noEff (m + 1)
-updateModel (c, w) SubtractOne m = do
+updateModel (c, w) Initialize m =
   m <# do
-    liftIO (runSystem (drawEntity c) w)
+    liftIO $ runSystem (drawBackground c) w
     pure NoOp
-  noEff (m - 1)
+updateModel (_, w) AddOne m = noEff (m + 1)
+updateModel (c, w) SubtractOne m = noEff (m - 1)
 updateModel (_, w) NoOp m = noEff m
 updateModel (c, w) SayHelloWorld m =
   m <# do
@@ -112,18 +113,8 @@ updateModel (c, w) SayHelloWorld m =
 viewModel :: Model -> View Action
 viewModel x =
   div_
-    []
-    [ button_ [onClick AddOne] [text "+"],
-      text (ms x),
-      button_ [onClick SubtractOne] [text "-"],
-      threeCanvas,
-      pixiCanvas,
-      canvas_
-        [ id_ "canvas",
-          width_ "400",
-          height_ "300"
-        ]
-        [],
+    [style_ $ ("padding" =: "12px" <> "background" =: "black" <>"display" =: "flex" <> "width" =: "650px" <> "flexDirection" =: "column" <> "alignItems" =: "center")]
+    [ pixiCanvas,
       audio_ [src_ "assets/se/button.mp3", id_ "buttonSe"] [],
       audio_ [src_ "assets/bgm/chess.mp3", id_ "bgm"] []
     ]
