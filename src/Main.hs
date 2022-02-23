@@ -14,6 +14,8 @@ import           Network.WebSockets
 import qualified Network.Wai.Application.Static as Static
 import qualified DevServer
 #endif
+
+import Control.Monad (replicateM)
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy as B
 import JSDOM.Generated.HTMLMediaElement (play)
@@ -25,6 +27,7 @@ import Miso.String
 import ThreeVRM (threeCanvas)
 import Types
 import View
+import Pixi (pixiCanvas)
 
 game :: System World ()
 game = do
@@ -46,13 +49,18 @@ data Action
   | SayHelloWorld
   deriving (Show, Eq)
 
+libraries =
+  [ "assets/js/three.js",
+    "assets/js/GLTFLoader.js",
+    "assets/js/three-vrm.js",
+    "assets/js/pixi.js"
+  ]
+
 #ifndef __GHCJS__
 runApp :: JSM () -> IO ()
 runApp f = do
-  threeString <- B.readFile "assets/js/three.js"
-  gltfLoaderString <- B.readFile "assets/js/GLTFLoader.js"
-  vrmString <- B.readFile "assets/js/three-vrm.js"
-  let js = threeString <> gltfLoaderString <> vrmString
+  jsList <- mapM B.readFile libraries
+  let js = Prelude.foldr (<>) "" jsList
   DevServer.debugOr 8080 (f >> syncPoint) js DevServer.fileServer
 #else
 runApp :: IO () -> IO ()
@@ -109,6 +117,7 @@ viewModel x =
       text (ms x),
       button_ [onClick SubtractOne] [text "-"],
       threeCanvas,
+      pixiCanvas,
       canvas_
         [ id_ "canvas",
           width_ "400",

@@ -23,6 +23,8 @@ import Language.Javascript.JSaddle
     val,
     valToJSON,
     valToText,
+    (!),
+    (#),
     (<#),
   )
 import Miso (canvas_, consoleLog, consoleLogJSVal, getElementById, height_, id_, width_)
@@ -51,9 +53,9 @@ newScene :: JSM Scene
 -- newScene = new (jsg "THREE.Scene") ()
 newScene = do
   scene <- eval "new THREE.Scene();"
-  light <- new (jsg "THREE" ^. js "DirectionalLight") (val "#fff")
+  light <- new (jsg "THREE" ! "DirectionalLight") (val "#fff")
   light ^. js "position" . js3 "set" "-1" "1" "-1" . js0 "normalize"
-  scene ^. js1 "add" light
+  scene # "add" $ light
   consoleLogJSVal scene
   return scene
 
@@ -64,7 +66,7 @@ type Camera = JSVal
 newCamera :: JSM Camera
 newCamera = do
   camera <- new (jsg "THREE" ^. js "PerspectiveCamera") (45 :: Float, (canvasWidth / canvasHeight) :: Float, 0.1 :: Float, 1000 :: Float)
-  camera ^. js "position" . js3 "set" "0" "0.8" "-2"
+  camera ! "position" ^. js3 "set" "0" "0.8" "-2"
   camera ^. js "rotation" . js3 "set" "0" (jsg "Math" ^. js "PI") "0"
   return camera
 

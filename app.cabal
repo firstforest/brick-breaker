@@ -14,6 +14,7 @@ executable app
   -- cabal-fmt: expand src -Main
   other-modules:
     DevServer
+    Pixi
     ThreeVRM
     Types
     View

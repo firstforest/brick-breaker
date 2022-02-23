@@ -17,6 +17,7 @@ import Miso
 import Miso.String
 import ThreeVRM
 import Types
+import Pixi (newApp, loadTexture, createSprite, addStage)
 
 drawEntity :: JSContextRef -> System World ()
 drawEntity c = do
@@ -38,7 +39,12 @@ drawEntity c = do
       jsval <- getElementById "buttonSe"
       audioElement <- fromJSValUnchecked jsval :: JSM HTMLAudioElement
       play audioElement
-
+  liftIO $ flip runJSM c $ do
+    app <- newApp
+    tex <- loadTexture "assets/img/20220131a.png"
+    sprite <- createSprite tex
+    addStage app sprite
+    return ()
   cmapM_ $ \(Position p, Entity e) -> liftIO $ do
     flip runJSM c $ do
       consoleLog $ ms . show $ (e, p)
