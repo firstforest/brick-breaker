@@ -23,3 +23,8 @@ game = do
   newEntity (Position 2, Velocity 1)
 
   cmap $ \(Position p, Velocity v) -> Position (v + p)
+
+moveBar :: Float -> System' ()
+moveBar x = do
+  cmap $ \(Bar _, Position (V2 _ y)) -> do
+    Position $ V2 x y

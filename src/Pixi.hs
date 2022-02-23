@@ -10,6 +10,7 @@ import Language.Javascript.JSaddle
     eval,
     freeFunction,
     fun,
+    isUndefined,
     js,
     js0,
     js1,
@@ -26,9 +27,9 @@ import Language.Javascript.JSaddle
     valToText,
     (!),
     (#),
-    (<#),
+    (<#), ghcjsPure, isNull
   )
-import Miso (div_, getElementById, id_)
+import Miso (consoleLogJSVal, div_, getElementById, id_)
 import Miso.String (ms)
 
 canvasWidth :: Float
@@ -73,16 +74,24 @@ addStage app = app ! "stage" # "addChild"
 
 findChild :: String -> Application -> JSM (Maybe JSVal)
 findChild name app = do
-  return Nothing
+  maybeBar <- app ! "stage" # "getChildByName" $ [name]
+  consoleLogJSVal maybeBar
+  b <- ghcjsPure $ isNull maybeBar
+  return $
+    if b
+      then Nothing 
+      else Just maybeBar
 
 pixiCanvas = div_ [id_ . ms $ "pixiCanvas"] []
 
 createBar = do
-  eval "new PIXI.Graphics().beginFill(0x333333).drawRect(0,0,50,10).endFill();"
+  bar <- eval "new PIXI.Graphics().beginFill(0x333333).drawRect(0,0,50,10).endFill();"
+  (bar <# "name") "bar"
+  return bar
 
 drawPlayerBar :: Float -> Float -> Float -> JSVal -> JSM ()
 drawPlayerBar x y length bar = do
-  (bar <# "x") (x - length/ 2)
+  (bar <# "x") (x - length / 2)
   (bar <# "y") y
   bar # "clear" $ ()
   bar # "beginFill" $ [0xAA1111 :: Float]

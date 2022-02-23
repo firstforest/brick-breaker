@@ -46,6 +46,7 @@ drawBar Context{..} = do
         Nothing -> do
           bar <- createBar 
           addStage pixiApp bar
+          consoleLog "createBar"
           return bar
       drawPlayerBar x y length bar 
       return ()

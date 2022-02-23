@@ -29,6 +29,7 @@ import Pixi (newApp, pixiCanvas, initializeApp)
 import ThreeVRM (threeCanvas)
 import Types
 import View
+import qualified Const
 
 -- | Type synonym for an application model
 type Model = Int
@@ -38,6 +39,7 @@ data Action
   = NoOp
   | Initialize
   | Tick
+  | Move Float
   deriving (Show, Eq)
 
 libraries =
@@ -76,7 +78,7 @@ main = do
     model = 0
     view = viewModel -- view function
     events = defaultEvents -- default delegated events
-    subs = [] -- empty subscription list
+    subs = [mouseSub $ \(x, y) -> Move $ fromIntegral x - offset] -- empty subscription list
     mountPoint = Nothing -- mount point for application (Nothing defaults to 'body')
     logLevel = Off -- used during prerendering to see if the VDOM and DOM are in synch (only used with `miso` function)
 
@@ -98,6 +100,12 @@ updateModel c@Context {..} Tick m =
   m <# do
     liftIO $ runSystem (drawBar c) world
     return Tick
+updateModel Context{..} (Move x) m = m <# do
+  liftIO $ runSystem (moveBar x) world
+  return NoOp
+  
+
+offset = (650 - Const.width) / 2
 
 -- | Constructs a virtual DOM from a model
 viewModel :: Model -> View Action
