@@ -1,4 +1,3 @@
--- | Haskell language pragma
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE CPP #-}
@@ -6,7 +5,6 @@
 
 module Main where
 
--- | Miso framework import
 import           Miso
 import           Miso.String
 
@@ -15,19 +13,21 @@ import Linear (V2 (..))
 import JSDOM.Types (HTMLAudioElement, unElement,fromJSValUnchecked, pFromJSVal, pToJSVal, JSString, liftJSM, askJSM, runJSM, JSContextRef )
 import JSDOM.Generated.HTMLMediaElement (play)
 
--- | JSAddle import
 #ifndef __GHCJS__
 import           Language.Javascript.JSaddle.Warp as JSaddle
 import qualified Network.Wai.Handler.Warp         as Warp
 import qualified Network.Wai as Wai
 import           Network.WebSockets
 import qualified Network.Wai.Application.Static as Static
+import qualified DevServer
 #endif
 import           Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy as B
 
 import Types
 import View
+import Language.Javascript.JSaddle (val)
+import ThreeVRM (threeCanvas)
 
 game :: System World ()
 game = do
@@ -50,20 +50,13 @@ data Action
   deriving (Show, Eq)
 
 #ifndef __GHCJS__
-hello :: Wai.Application
-hello = Static.staticApp settings
-  where
-    settings = Static.defaultWebAppSettings "."
 runApp :: JSM () -> IO ()
 runApp f = do
   threeString <- B.readFile "assets/js/three.js"
   gltfLoaderString <- B.readFile "assets/js/GLTFLoader.js"
   vrmString <- B.readFile "assets/js/three-vrm.js"
-  let js = JSaddle.jsaddleJs False <> threeString <> gltfLoaderString <> vrmString
-      b = JSaddle.jsaddleAppWithJsOr js hello
-  jSaddle <- JSaddle.jsaddleOr defaultConnectionOptions (f >> syncPoint) b
-  -- JSaddle.debugOr 8080 (f >> syncPoint) b
-  Warp.runSettings (Warp.setPort 8081 (Warp.setTimeout 3600 Warp.defaultSettings)) jSaddle
+  let js = threeString <> gltfLoaderString <> vrmString
+  DevServer.debugOr 8080 (f >> syncPoint) js DevServer.fileServer 
 #else
 runApp :: IO () -> IO ()
 runApp app = app
@@ -73,7 +66,6 @@ runApp app = app
 main :: IO ()
 main = do
   world <- initWorld
-  putStrLn "start"
   runApp $ do
     c <- askJSM
     let update = updateModel (c, world)
@@ -105,6 +97,7 @@ updateModel (c, w) SayHelloWorld m = m <# do
     audioElement <- fromJSValUnchecked jsval :: JSM HTMLAudioElement
     play audioElement
   liftIO (runSystem game w)
+  consoleLog "HelloWorld"
   liftIO (putStrLn "Hello World") >> pure NoOp
 
 -- | Constructs a virtual DOM from a model
@@ -113,6 +106,7 @@ viewModel x = div_ [] [
    button_ [ onClick AddOne ] [ text "+" ]
  , text (ms x)
  , button_ [ onClick SubtractOne ] [ text "-" ]
+ , threeCanvas
  , canvas_ [ id_ "canvas"
             , width_ "400"
             , height_ "300"

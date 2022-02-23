@@ -13,6 +13,7 @@ executable app
 
   -- cabal-fmt: expand src -Main
   other-modules:
+    DevServer
     ThreeVRM
     Types
     View
@@ -23,9 +24,9 @@ executable app
     , bytestring
     , jsaddle
     , jsaddle-dom
+    , lens
     , linear
     , miso
-    , lens
 
   if !impl(ghcjs)
     build-depends:
