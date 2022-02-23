@@ -25,6 +25,15 @@ newtype Velocity = Velocity Pos deriving (Show)
 
 instance Component Velocity where type Storage Velocity = Map Velocity
 
+data Collider = Collider {
+    left :: Float,
+    top :: Float,
+    right :: Float,
+    bottom :: Float
+} deriving Show
+
+instance Component Collider where type Storage Collider = Map Collider
+
 data Bar = Bar
   { length :: Float
   }
@@ -40,7 +49,7 @@ data Ball = Ball {
 
 instance Component Ball where type Storage Ball = Unique Ball
 
-makeWorld "World" [''Position, ''Velocity, ''Bar, ''Ball]
+makeWorld "World" [''Position, ''Velocity, ''Bar, ''Ball, ''Collider]
 
 type System' a = System World a
 
