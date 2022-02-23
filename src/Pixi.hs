@@ -76,7 +76,6 @@ addStage app = app ! "stage" # "addChild"
 findChild :: String -> Application -> JSM (Maybe JSVal)
 findChild name app = do
   maybeBar <- app ! "stage" # "getChildByName" $ [name]
-  consoleLogJSVal maybeBar
   b <- ghcjsPure $ isNull maybeBar
   return $
     if b
