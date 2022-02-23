@@ -25,18 +25,22 @@ import Language.Javascript.JSaddle
     valToText,
     (<#),
   )
-import Miso (canvas_, consoleLog, consoleLogJSVal, height_, id_, width_, getElementById)
+import Miso (canvas_, consoleLog, consoleLogJSVal, getElementById, height_, id_, width_)
 import Miso.String (ms)
+
+canvasWidth = 640
+
+canvasHeight = 480
 
 threeCanvas =
   canvas_
     [ id_ $ ms "threeCanvas",
-      width_ $ ms "400",
-      height_ $ ms "300"
+      width_ . ms . show $ canvasWidth,
+      height_ . ms . show $ canvasHeight
     ]
     []
 
-getThreeCanvas :: JSM HTMLCanvasElement 
+getThreeCanvas :: JSM HTMLCanvasElement
 getThreeCanvas = do
   jsval <- getElementById $ ms "threeCanvas"
   fromJSValUnchecked jsval
@@ -59,7 +63,7 @@ type Camera = JSVal
 
 newCamera :: JSM Camera
 newCamera = do
-  camera <- eval "new THREE.PerspectiveCamera(45, 400/300, 0.1, 1000)"
+  camera <- new (jsg "THREE" ^. js "PerspectiveCamera") (45 :: Float, (canvasWidth / canvasHeight) :: Float, 0.1 :: Float, 1000 :: Float)
   camera ^. js "position" . js3 "set" "0" "0.8" "-2"
   camera ^. js "rotation" . js3 "set" "0" (jsg "Math" ^. js "PI") "0"
   return camera
@@ -73,7 +77,7 @@ newRenderer canvas = do
   (args <# "antialias") True
   renderer <- new (jsg "THREE" ^. js "WebGLRenderer") (val args)
   renderer ^. js1 "setPixelRatio" (eval "window.devicePixelRatio")
-  renderer ^. js2 "setSize" "400" "300"
+  renderer ^. js2 "setSize" canvasWidth canvasHeight
   renderer ^. js2 "setClearColor" "#7fbfff" "0.1"
   return renderer
 
@@ -98,14 +102,15 @@ loadVRM loader scene renderer camera = do
         "assets/vrm/256fes_2022.vrm"
         ( fun $ \_ _ [gltf] -> do
             consoleLog $ ms "gltf load"
-            jsg "THREE" ^. js "VRM" . js1 "from" gltf
-              . js1
-                "then"
-                ( fun $ \_ _ [vrm] -> do
-                    scene ^. js1 "add" (vrm ^. js "scene")
-                    consoleLogJSVal vrm
-                    render renderer scene camera
-                )
+            jsg "THREE"
+              ^. js "VRM" . js1 "from" gltf
+                . js1
+                  "then"
+                  ( fun $ \_ _ [vrm] -> do
+                      scene ^. js1 "add" (vrm ^. js "scene")
+                      consoleLogJSVal vrm
+                      render renderer scene camera
+                  )
             return ()
         )
         ( fun $ \_ _ [progress] -> do
