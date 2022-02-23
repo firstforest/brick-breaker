@@ -98,6 +98,7 @@ updateModel c@Context {..} Initialize m =
 updateModel Context {..} NoOp m = noEff m
 updateModel c@Context {..} Tick m =
   m <# do
+    liftIO $ runSystem step world
     liftIO $ runSystem (drawEntities c) world
     return Tick
 updateModel Context {..} (Move x) m =

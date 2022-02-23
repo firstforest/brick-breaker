@@ -15,14 +15,11 @@ import Linear
 initialize :: System' ()
 initialize = do
   newEntity (Position $ V2 (Const.width/2) (Const.height - 20), Bar 100)
-  newEntity (Position $ V2 (Const.width/2) (Const.height - 30), Ball 10)
+  newEntity (Position $ V2 (Const.width/2) (Const.height - 30), Ball 10, Velocity (V2 0 (-1)))
   return ()
 
-game :: System' ()
-game = do
-  newEntity (Position 0, Velocity 1)
-  newEntity (Position 2, Velocity 1)
-
+step :: System' ()
+step = do
   cmap $ \(Position p, Velocity v) -> Position (v + p)
 
 moveBar :: Float -> System' ()
