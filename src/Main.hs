@@ -4,7 +4,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
--- | Haskell module declaration
 module Main where
 
 -- | Miso framework import
@@ -25,6 +24,7 @@ import           Network.WebSockets
 import qualified Network.Wai.Application.Static as Static
 #endif
 import           Control.Monad.IO.Class
+import qualified Data.ByteString.Lazy as B
 
 import Types
 import View
@@ -55,7 +55,15 @@ hello = Static.staticApp settings
   where
     settings = Static.defaultWebAppSettings "."
 runApp :: JSM () -> IO ()
-runApp f = JSaddle.debugOr 8080 (f >> syncPoint) (JSaddle.jsaddleAppWithJsOr (JSaddle.jsaddleJs False) hello)
+runApp f = do
+  threeString <- B.readFile "assets/js/three.js"
+  gltfLoaderString <- B.readFile "assets/js/GLTFLoader.js"
+  vrmString <- B.readFile "assets/js/three-vrm.js"
+  let js = JSaddle.jsaddleJs False <> threeString <> gltfLoaderString <> vrmString
+      b = JSaddle.jsaddleAppWithJsOr js hello
+  jSaddle <- JSaddle.jsaddleOr defaultConnectionOptions (f >> syncPoint) b
+  -- JSaddle.debugOr 8080 (f >> syncPoint) b
+  Warp.runSettings (Warp.setPort 8081 (Warp.setTimeout 3600 Warp.defaultSettings)) jSaddle
 #else
 runApp :: IO () -> IO ()
 runApp app = app
@@ -66,17 +74,17 @@ main :: IO ()
 main = do
   world <- initWorld
   putStrLn "start"
-  runApp $ do 
+  runApp $ do
     c <- askJSM
     let update = updateModel (c, world)
-    startApp App { 
+    startApp App {
       update = update, ..}
   where
     initialAction = SayHelloWorld -- initial action to be executed on application load
     model  = 0
     view   = viewModel            -- view function
     events = defaultEvents        -- default delegated events
-    subs   = [arrowsSub (\_ -> SubtractOne)]                   -- empty subscription list
+    subs   = [arrowsSub (const SubtractOne)]                   -- empty subscription list
     mountPoint = Nothing          -- mount point for application (Nothing defaults to 'body')
     logLevel = Off                -- used during prerendering to see if the VDOM and DOM are in synch (only used with `miso` function)
 

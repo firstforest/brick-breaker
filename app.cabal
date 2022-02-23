@@ -1,38 +1,39 @@
-name:          app
-version:       0.1.0.0
-synopsis:      First miso app
-category:      Web
-build-type:    Simple
-cabal-version: >=1.22
-
-extra-source-files:
-  assets/se/*
+name:               app
+version:            0.1.0.0
+synopsis:           First miso app
+category:           Web
+build-type:         Simple
+cabal-version:      >=1.22
+extra-source-files: assets/se/*
 
 executable app
   main-is:          Main.hs
   cpp-options:      -DGHCJS_BROWSER
   hs-source-dirs:   src
 
-  -- cabal-fmt: expand src
+  -- cabal-fmt: expand src -Main
   other-modules:
+    ThreeVRM
     Types
     View
 
   build-depends:
       apecs
     , base
+    , bytestring
     , jsaddle
     , jsaddle-dom
     , linear
     , miso
+    , lens
 
   if !impl(ghcjs)
     build-depends:
         jsaddle-warp
       , transformers
       , wai
+      , wai-app-static
       , warp
-      ,wai-app-static
       , websockets
 
   default-language: Haskell2010
