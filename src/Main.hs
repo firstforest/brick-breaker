@@ -37,8 +37,9 @@ import Types
 import View
 
 -- | Type synonym for an application model
-newtype Model = Model
-  { isInitialized :: Bool
+data Model = Model
+  { isInitialized :: Bool,
+    time :: Float
   }
   deriving (Show, Eq)
 
@@ -96,21 +97,22 @@ main = do
   runApp $ do
     c <- askJSM
     pixiApp <- newApp
+    time <- double2Float <$> now
     let update = updateModel (Context c pixiApp world)
     startApp
       App
-        { update = update,
+        { model = Model False time ,
+          update = update,
           ..
         }
   where
     initialAction = Initialize
-    model = Model False
     view = viewModel -- view function
     events = defaultEvents -- default delegated events
     subs =
-      [ mouseSub $ \(x, y) -> Move $ fromIntegral x - offset,
-        animationFrameSub $ \x -> Tick (x / 1000)
-      ] 
+      [ mouseSub $ \(x, y) -> Move $ fromIntegral x - offset
+      -- animationFrameSub $ \x -> Tick (x / 1000)
+      ]
     mountPoint = Nothing -- mount point for application (Nothing defaults to 'body')
     logLevel = Off -- used during prerendering to see if the VDOM and DOM are in synch (only used with `miso` function)
 
@@ -129,15 +131,17 @@ updateModel c@Context {..} Initialize m =
     --     jsval <- getElementById "bgm"
     --     audioElement <- fromJSValUnchecked jsval :: JSM HTMLAudioElement
     --     play audioElement
-    return NoOp
+    return $ Tick 0
 updateModel Context {..} NoOp m = noEff m
 updateModel c@Context {..} (Tick dt) m =
   m <# do
-    consoleLog .ms $ dt
+    consoleLog . ms $ dt
+    prev <- double2Float <$> now
     when (isInitialized m) $ do
       liftIO $ runSystem (step dt) world
       liftIO $ runSystem (drawEntities c) world
-    return NoOp
+    time <- double2Float <$> now
+    return $ Tick $ (time - prev) / 1000
 updateModel Context {..} (Move x) m =
   m <# do
     liftIO $ runSystem (moveBar x) world

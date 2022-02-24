@@ -23,7 +23,7 @@ initialize = do
       Bar 100,
       Collider 0 0 100 10
     )
-  forM_ [0 .. 20] $ \i -> do
+  forM_ [0 .. 0] $ \i -> do
     newEntity
       ( Position $ V2 ((Const.width / 2) + i) (Const.height - 50),
         Ball ("ball" <> show i) 10,
