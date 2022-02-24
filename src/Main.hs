@@ -26,7 +26,7 @@ import JSDOM (currentWindowUnchecked)
 import JSDOM.Custom.Window (requestAnimationFrame_)
 import JSDOM.Generated.HTMLMediaElement (play)
 import JSDOM.Types (Callback (Callback), HTMLAudioElement, JSContextRef, JSString, RequestAnimationFrameCallback (RequestAnimationFrameCallback), askJSM, fromJSValUnchecked, liftJSM, pFromJSVal, pToJSVal, runJSM, unElement)
-import Language.Javascript.JSaddle (MakeObject (makeObject), function, val)
+import Language.Javascript.JSaddle (MakeObject (makeObject), function, val, fromJSVal)
 import Language.Javascript.JSaddle.Object (Function (Function))
 import Linear (V2 (..))
 import Miso
@@ -126,11 +126,6 @@ updateModel c@Context {..} Initialize m =
     liftIO $ runSystem (drawBackground c) world
     liftIO $ runSystem (initializeView c) world
     consoleLog "pixi initialized"
-    -- liftIO $
-    --   flip runJSM jsContext $ do
-    --     jsval <- getElementById "bgm"
-    --     audioElement <- fromJSValUnchecked jsval :: JSM HTMLAudioElement
-    --     play audioElement
     return $ Tick 0
 updateModel Context {..} NoOp m = noEff m
 updateModel c@Context {..} (Tick dt) m =
@@ -156,5 +151,5 @@ viewModel x =
     [style_ $ ("padding" =: "12px" <> "background" =: "black" <> "display" =: "flex" <> "width" =: "650px" <> "flexDirection" =: "column" <> "alignItems" =: "center")]
     [ pixiCanvas,
       audio_ [src_ "assets/se/button.mp3", id_ "buttonSe"] [],
-      audio_ [src_ "assets/bgm/chess.mp3", id_ "bgm"] []
+      audio_ [src_ "assets/bgm/chess.mp3", autoplay_ True, id_ "bgm"] []
     ]
