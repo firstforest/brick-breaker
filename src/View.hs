@@ -43,6 +43,7 @@ drawEntities :: Context -> System' ()
 drawEntities c = do
   drawBar c
   drawBall c
+  drawBlock c
 
 createGraphics pixiApp name = do
   bar <- createNamedGraphics name
@@ -63,7 +64,7 @@ drawBar Context {..} = do
 
 drawBall :: Context -> System' ()
 drawBall Context {..} = do
-  cmapM_ $ \(Ball {id, radius}, Position (V2 x y)) -> do
+  cmapM $ \(Ball {id, radius}, Position (V2 x y)) -> do
     liftToSystem jsContext $ do
       maybeBall <- findChild id pixiApp
       ball <- case maybeBall of
@@ -71,3 +72,13 @@ drawBall Context {..} = do
         Nothing -> createGraphics pixiApp id
       Pixi.drawBall x y radius ball
       return ()
+
+drawBlock :: Context -> System' ()
+drawBlock Context {..} = do
+  cmapM $ \(Block {blockId}, Position (V2 x y)) -> do
+    liftToSystem jsContext $ do
+      maybeBlock <- findChild blockId pixiApp
+      block <- case maybeBlock of
+        Just b -> pure b
+        Nothing -> createGraphics pixiApp blockId
+      Pixi.drawBlock x y block

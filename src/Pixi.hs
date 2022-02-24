@@ -10,6 +10,8 @@ import Language.Javascript.JSaddle
     eval,
     freeFunction,
     fun,
+    ghcjsPure,
+    isNull,
     isUndefined,
     js,
     js0,
@@ -27,7 +29,7 @@ import Language.Javascript.JSaddle
     valToText,
     (!),
     (#),
-    (<#), ghcjsPure, isNull
+    (<#),
   )
 import Miso (consoleLogJSVal, div_, getElementById, id_)
 import Miso.String (ms)
@@ -79,7 +81,7 @@ findChild name app = do
   b <- ghcjsPure $ isNull maybeBar
   return $
     if b
-      then Nothing 
+      then Nothing
       else Just maybeBar
 
 pixiCanvas = div_ [id_ . ms $ "pixiCanvas"] []
@@ -112,4 +114,14 @@ drawBall x y radius ball = do
   ball # "beginFill" $ [0xEE1111 :: Float]
   ball # "drawCircle" $ [0, 0, radius]
   ball # "endFill" $ ()
+  return ()
+
+drawBlock :: Float -> Float -> JSVal -> JSM ()
+drawBlock x y block = do
+  (block <# "x") (x - 30)
+  (block <# "y") (y - 20)
+  block # "clear" $ ()
+  block # "beginFill" $ [0x11EE11 :: Float]
+  block # "drawRect" $ ([1, 1, 59, 39] :: [Float])
+  block # "endFill" $ ()
   return ()

@@ -11,7 +11,7 @@
 module Types where
 
 import Apecs
-import JSDOM.Types (JSContextRef, Comment)
+import JSDOM.Types (Comment, JSContextRef)
 import Linear (V2 (..))
 import Pixi (Application)
 
@@ -25,12 +25,13 @@ newtype Velocity = Velocity Pos deriving (Show)
 
 instance Component Velocity where type Storage Velocity = Map Velocity
 
-data Collider = Collider {
-    left :: Float,
+data Collider = Collider
+  { left :: Float,
     top :: Float,
     right :: Float,
     bottom :: Float
-} deriving Show
+  }
+  deriving (Show)
 
 instance Component Collider where type Storage Collider = Map Collider
 
@@ -43,14 +44,22 @@ instance Component Bar where type Storage Bar = Unique Bar
 
 -- Ball
 
-data Ball = Ball {
-    id :: String,
+data Ball = Ball
+  { id :: String,
     radius :: Float
-} deriving Show
+  }
+  deriving (Show)
 
 instance Component Ball where type Storage Ball = Map Ball
 
-makeWorld "World" [''Position, ''Velocity, ''Bar, ''Ball, ''Collider]
+data Block = Block
+  { blockId :: String
+  }
+  deriving (Show)
+
+instance Component Block where type Storage Block = Map Block
+
+makeWorld "World" [''Position, ''Velocity, ''Bar, ''Ball, ''Collider, ''Block]
 
 type System' a = System World a
 
