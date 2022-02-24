@@ -2,10 +2,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module View (
-  drawEntities,
-  drawBackground
-) where
+module View
+  ( drawEntities,
+    drawBackground,
+    initializeView
+  )
+where
 
 import Apecs
 import qualified Const
@@ -16,9 +18,15 @@ import Language.Javascript.JSaddle
 import Linear (V2 (V2))
 import Miso
 import Miso.String
+import Pixi (addStage, createNamedGraphics, createSprite, drawPlayerBar, findChild, loadTexture, newApp, setSpriteSize)
 import qualified Pixi
-import Pixi (addStage, createSprite, drawPlayerBar, findChild, loadTexture, newApp, setSpriteSize, createNamedGraphics)
 import Types
+
+initializeView :: Context -> System' ()
+initializeView Context {..} = do
+  liftToSystem jsContext $ do
+    createGraphics pixiApp "bar"
+    return ()
 
 drawBackground :: Context -> System' ()
 drawBackground Context {..} = do
@@ -36,6 +44,12 @@ drawEntities c = do
   drawBar c
   drawBall c
 
+createGraphics pixiApp name = do
+  bar <- createNamedGraphics name
+  addStage pixiApp bar
+  consoleLog . ms $ "createGraphics" <> name
+  return bar
+
 drawBar :: Context -> System' ()
 drawBar Context {..} = do
   cmapM_ $ \(Bar {length}, Position (V2 x y)) -> do
@@ -43,25 +57,17 @@ drawBar Context {..} = do
       maybeChild <- findChild "bar" pixiApp
       bar <- case maybeChild of
         Just bar -> return bar
-        Nothing -> do
-          bar <- createNamedGraphics "bar"
-          addStage pixiApp bar
-          consoleLog "createBar"
-          return bar
+        Nothing -> createGraphics pixiApp "bar"
       drawPlayerBar x y length bar
       return ()
 
 drawBall :: Context -> System' ()
 drawBall Context {..} = do
-  cmapM_ $ \(Ball {radius}, Position (V2 x y)) -> do
+  cmapM_ $ \(Ball {id, radius}, Position (V2 x y)) -> do
     liftToSystem jsContext $ do
-      maybeBall <- findChild "ball" pixiApp
+      maybeBall <- findChild id pixiApp
       ball <- case maybeBall of
         Just ball -> return ball
-        Nothing -> do
-          ball <- createNamedGraphics "ball"
-          addStage pixiApp ball
-          consoleLog "createBall"
-          return ball
+        Nothing -> createGraphics pixiApp id
       Pixi.drawBall x y radius ball
       return ()

@@ -44,10 +44,11 @@ instance Component Bar where type Storage Bar = Unique Bar
 -- Ball
 
 data Ball = Ball {
+    id :: String,
     radius :: Float
 } deriving Show
 
-instance Component Ball where type Storage Ball = Unique Ball
+instance Component Ball where type Storage Ball = Map Ball
 
 makeWorld "World" [''Position, ''Velocity, ''Bar, ''Ball, ''Collider]
 

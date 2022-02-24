@@ -16,7 +16,7 @@ import qualified DevServer
 #endif
 
 import qualified Const
-import Control.Monad (forM_, replicateM)
+import Control.Monad (forM_, replicateM, when)
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy as B
 import Data.IORef (newIORef, readIORef, writeIORef)
@@ -37,7 +37,10 @@ import Types
 import View
 
 -- | Type synonym for an application model
-type Model = Int
+newtype Model = Model
+  { isInitialized :: Bool
+  }
+  deriving (Show, Eq)
 
 -- | Sum type for application events
 data Action
@@ -74,6 +77,8 @@ registerAnimationFrame f = do
     prev <- liftIO $ readIORef ref
     n <- double2Float <$> now
     liftIO $ writeIORef ref n
+    let diff = n - prev
+    -- consoleLog $ ms diff
     f $ n - prev
     d <- makeObject a
     requestAnimationFrame_ window (RequestAnimationFrameCallback (Callback (Function d)))
@@ -91,7 +96,6 @@ main = do
   runApp $ do
     c <- askJSM
     pixiApp <- newApp
-    -- registerAnimationFrame $ \x -> consoleLog $ ms x
     let update = updateModel (Context c pixiApp world)
     startApp
       App
@@ -100,25 +104,28 @@ main = do
         }
   where
     initialAction = Initialize
-    model = 0
+    model = Model False
     view = viewModel -- view function
     events = defaultEvents -- default delegated events
     subs =
       [ mouseSub $ \(x, y) -> Move $ fromIntegral x - offset,
         animationFrameSub $ \x -> Tick (x / 1000)
-      ] -- empty subscription list
+      ] 
     mountPoint = Nothing -- mount point for application (Nothing defaults to 'body')
     logLevel = Off -- used during prerendering to see if the VDOM and DOM are in synch (only used with `miso` function)
 
 -- | Updates model, optionally introduces side effects
 updateModel :: Context -> Action -> Model -> Effect Action Model
 updateModel c@Context {..} Initialize m =
-  m <# do
+  m {isInitialized = True} <# do
     liftIO $ runSystem initialize world
+    consoleLog "world initialized"
     initializeApp pixiApp
     liftIO $ runSystem (drawBackground c) world
+    liftIO $ runSystem (initializeView c) world
+    consoleLog "pixi initialized"
     -- liftIO $
-    --   flip runJSM c $ do
+    --   flip runJSM jsContext $ do
     --     jsval <- getElementById "bgm"
     --     audioElement <- fromJSValUnchecked jsval :: JSM HTMLAudioElement
     --     play audioElement
@@ -126,8 +133,10 @@ updateModel c@Context {..} Initialize m =
 updateModel Context {..} NoOp m = noEff m
 updateModel c@Context {..} (Tick dt) m =
   m <# do
-    liftIO $ runSystem (step dt) world
-    liftIO $ runSystem (drawEntities c) world
+    consoleLog .ms $ dt
+    when (isInitialized m) $ do
+      liftIO $ runSystem (step dt) world
+      liftIO $ runSystem (drawEntities c) world
     return NoOp
 updateModel Context {..} (Move x) m =
   m <# do
