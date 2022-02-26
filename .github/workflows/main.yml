@@ -1,0 +1,32 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v1
+      - uses: cachix/install-nix-action@v16
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+      - name: Install cachix
+        run: nix-env -iA cachix -f https://cachix.org/api/v1/install
+      - name: Use cachix
+        run: cachix use miso-haskell
+      - name: build
+        run: nix-build -A release
+      - name: make public
+        run: mkdir ./public
+      - run: cp -r ./assets ./public
+      - run: cp ./result/bin/app.jsexe/all.js ./public
+      - run: cp ./index.html ./public
+      - name: App Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
