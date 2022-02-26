@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE BlockArguments #-}
 
 module Main where
 
@@ -48,6 +49,7 @@ data Action
   = NoOp
   | Initialize
   | Tick Float
+  | RequestAnimationFrame Float
   | Move Float
   deriving (Show, Eq)
 
@@ -64,31 +66,18 @@ runApp f = do
   jsList <- mapM B.readFile libraries
   let js = Prelude.foldr (<>) "" jsList
   DevServer.debugOr 8080 (f >> syncPoint) js DevServer.fileServer
+requestTick :: Float -> Sink Action -> JSM ()
+requestTick t sink = liftIO . sink $ Tick t
 #else
 runApp :: IO () -> IO ()
 runApp app = app
-#endif
-
-registerAnimationFrame :: (Float -> JSM ()) -> JSM ()
-registerAnimationFrame f = do
-  n <- double2Float <$> now
-  ref <- liftIO $ newIORef n
+requestTick :: Float -> Sink Action -> JSM ()
+requestTick t sink = do
   window <- currentWindowUnchecked
-  f <- function $ \a b c -> do
-    prev <- liftIO $ readIORef ref
-    n <- double2Float <$> now
-    liftIO $ writeIORef ref n
-    let diff = n - prev
-    -- consoleLog $ ms diff
-    f $ n - prev
-    d <- makeObject a
-    requestAnimationFrame_ window (RequestAnimationFrameCallback (Callback (Function d)))
-  requestAnimationFrame_ window (RequestAnimationFrameCallback (Callback f))
-
-animationFrameSub :: (Float -> Action) -> Sub Action
-animationFrameSub act sink = do
-  registerAnimationFrame $ \x -> do
-    liftIO $ sink $ act x
+  callback <- function \_ _ _ -> do
+    liftIO . sink $ Tick t
+  requestAnimationFrame_ window $ RequestAnimationFrameCallback $ Callback callback
+#endif
 
 -- | Entry point for a miso application
 main :: IO ()
@@ -111,7 +100,6 @@ main = do
     events = defaultEvents -- default delegated events
     subs =
       [ mouseSub $ \(x, y) -> Move $ fromIntegral x - offset
-      -- animationFrameSub $ \x -> Tick (x / 1000)
       ]
     mountPoint = Nothing -- mount point for application (Nothing defaults to 'body')
     logLevel = Off -- used during prerendering to see if the VDOM and DOM are in synch (only used with `miso` function)
@@ -138,7 +126,9 @@ updateModel c@Context {..} (Tick time) m =
     when (isInitialized m) $ do
       liftIO $ runSystem (step dt) world
       liftIO $ runSystem (drawEntities c) world
-    return $ Tick n
+    return $ RequestAnimationFrame n
+updateModel c (RequestAnimationFrame t) m = effectSub m $ \sink -> do
+  requestTick t sink
 updateModel Context {..} (Move x) m =
   m <# do
     liftIO $ runSystem (moveBar x) world
