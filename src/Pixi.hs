@@ -29,10 +29,13 @@ import Language.Javascript.JSaddle
     valToText,
     (!),
     (#),
-    (<#),
+    (<#), toJSString, fromJSVal, JSValue, valToStr
   )
-import Miso (consoleLogJSVal, div_, getElementById, id_)
+import Miso (consoleLogJSVal, div_, getElementById, id_, consoleLog)
 import Miso.String (ms)
+import Control.Monad
+import JSDOM.Types (fromJSArrayUnchecked)
+import JSDOM.Types
 
 canvasWidth :: Float
 canvasWidth = Const.width
@@ -73,11 +76,29 @@ setSpriteSize sprite w h = do
   sprite <# "width" $ w
   sprite <# "height" $ h
 
-addStage app = app ! "stage" # "addChild"
+addStage :: Application -> JSVal -> JSM ()
+addStage app x = do
+  app ! "stage" # "addChild" $ [x]
+  return ()
+
+addChild :: JSVal -> JSVal -> JSM ()
+addChild container x = do
+  container # "addChild" $ [x]
+  return ()
+
+createContainer :: String -> JSM JSVal
+createContainer name = do
+  c <- eval "new PIXI.Container()"
+  (c <# "name") name
+  return c
 
 findChild :: String -> Application -> JSM (Maybe JSVal)
 findChild name app = do
-  maybeBar <- app ! "stage" # "getChildByName" $ [name]
+  contaier <- app ! "stage"
+  findChildFromContainer name contaier
+
+findChildFromContainer name contaier = do
+  maybeBar <- contaier # "getChildByName" $ [name]
   b <- ghcjsPure $ isNull maybeBar
   return $
     if b
@@ -125,3 +146,39 @@ drawBlock x y block = do
   block # "drawRect" $ ([1, 1, 59, 39] :: [Float])
   block # "endFill" $ ()
   return ()
+
+clearBlocks :: Application -> JSM ()
+clearBlocks app = do
+  bs <- getAllBlocks app
+  forM_ bs $ \b -> b # "clear" $ ()
+
+getAllBlocks :: Application -> JSM [JSVal]
+getAllBlocks app = do
+  bc <- findChild "blockContainer" app
+  case bc of
+    Just b -> getChildren b
+    Nothing -> do
+      consoleLog .ms $ "error"
+      return []
+
+getChildren :: JSVal -> JSM [JSVal]
+getChildren contaier = do
+  children <- contaier ! "children"
+  fromJSArrayUnchecked children
+
+getBlockContainer app = do
+  Just bc <- findChild "blockContainer" app
+  return bc
+
+
+deleteRemovedBlock :: Application -> [String] -> JSM ()
+deleteRemovedBlock app ids = do
+  bc <- getBlockContainer app
+  blocks <- getChildren bc
+  let remainIds = map toJSString ids
+  forM_ blocks $ \block -> do
+    n <- block ! "name" >>= valToStr
+    when (n `notElem` remainIds) $ do
+      bc # "removeChild" $ block
+      return ()
+

@@ -126,17 +126,19 @@ updateModel c@Context {..} Initialize m =
     liftIO $ runSystem (drawBackground c) world
     liftIO $ runSystem (initializeView c) world
     consoleLog "pixi initialized"
-    return $ Tick 0
+    time <- double2Float <$> now
+    return $ Tick time
 updateModel Context {..} NoOp m = noEff m
-updateModel c@Context {..} (Tick dt) m =
+updateModel c@Context {..} (Tick time) m =
   m <# do
+    n <- double2Float <$> now
+    let dt = (n - time) / 1000
     consoleLog . ms $ dt
     prev <- double2Float <$> now
     when (isInitialized m) $ do
       liftIO $ runSystem (step dt) world
       liftIO $ runSystem (drawEntities c) world
-    time <- double2Float <$> now
-    return $ Tick $ (time - prev) / 1000
+    return $ Tick n
 updateModel Context {..} (Move x) m =
   m <# do
     liftIO $ runSystem (moveBar x) world

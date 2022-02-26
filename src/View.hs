@@ -5,7 +5,7 @@
 module View
   ( drawEntities,
     drawBackground,
-    initializeView
+    initializeView,
   )
 where
 
@@ -21,11 +21,14 @@ import Miso.String
 import Pixi (addStage, createNamedGraphics, createSprite, drawPlayerBar, findChild, loadTexture, newApp, setSpriteSize)
 import qualified Pixi
 import Types
+import Data.List (delete)
 
 initializeView :: Context -> System' ()
 initializeView Context {..} = do
   liftToSystem jsContext $ do
     createGraphics pixiApp "bar"
+    blockContainer <- Pixi.createContainer "blockContainer"
+    addStage pixiApp blockContainer
     return ()
 
 drawBackground :: Context -> System' ()
@@ -51,6 +54,13 @@ createGraphics pixiApp name = do
   consoleLog . ms $ "createGraphics" <> name
   return bar
 
+createBlock container name = do
+  bar <- createNamedGraphics name
+  Pixi.addChild container bar
+  consoleLog . ms $ "createGraphics" <> name
+  return bar
+
+
 drawBar :: Context -> System' ()
 drawBar Context {..} = do
   cmapM_ $ \(Bar {length}, Position (V2 x y)) -> do
@@ -75,10 +85,13 @@ drawBall Context {..} = do
 
 drawBlock :: Context -> System' ()
 drawBlock Context {..} = do
+  allIds <- cfold (\bs Block {blockId} -> blockId : bs) []
+  liftToSystem jsContext $ Pixi.deleteRemovedBlock pixiApp allIds
   cmapM $ \(Block {blockId}, Position (V2 x y)) -> do
     liftToSystem jsContext $ do
-      maybeBlock <- findChild blockId pixiApp
+      bc <- Pixi.getBlockContainer pixiApp
+      maybeBlock <- Pixi.findChildFromContainer blockId bc
       block <- case maybeBlock of
         Just b -> pure b
-        Nothing -> createGraphics pixiApp blockId
+        Nothing -> createBlock bc blockId
       Pixi.drawBlock x y block
