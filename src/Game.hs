@@ -30,8 +30,10 @@ initialize = do
         Ball ("ball" <> show i) 10,
         Velocity (ballSpeed *^ normalize (V2 10 (-3 - i)))
       )
-  forM_ [0 .. 5] $ \i -> do
+  forM_ [0 .. 4] $ \i -> do
     newEntity (Block ("block" <> show i), Position $ V2 (i * 60 + 100) 50, Collider 0 0 60 40)
+  forM_ [0 .. 4] $ \i -> do
+    newEntity (Block ("block" <> show (i+5)), Position $ V2 (i * 60 + 100) 100, Collider 0 0 60 40)
   newEntity (Collider (-500) 0 0 Const.height) --left
   newEntity (Collider Const.width 0 (Const.width + 500) Const.height) --right
   newEntity (Collider 0 (-500) Const.width 0) -- top
