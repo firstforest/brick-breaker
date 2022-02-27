@@ -110,5 +110,5 @@ viewModel x = div_ [] [
             , height_ "300"
             ] []
  , audio_ [ src_ "assets/se/button.mp3", id_ "buttonSe" ] []
- , audio_ [ src_ "assets/bgm/mozegaku5_10_midorisekai.mp3", id_ "bgm" ] []
+ , audio_ [ src_ "assets/bgm/chess.mp3", id_ "bgm" ] []
  ]
