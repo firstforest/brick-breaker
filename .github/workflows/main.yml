@@ -14,6 +14,10 @@ jobs:
         uses: styfle/cancel-workflow-action@0.9.1
         with:
           access_token: ${{ github.token }}
+      - uses: cachix/cachix-action@v10
+        with:
+          name: firstforest
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Install cachix
         run: nix-env -iA cachix -f https://cachix.org/api/v1/install
       - name: Use cachix
